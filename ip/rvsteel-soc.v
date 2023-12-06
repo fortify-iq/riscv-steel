@@ -308,21 +308,21 @@ localparam SHA2_ARCH = 100;
   sha2_top_apb#(
     .ARCHITECTURE    (SHA2_ARCH)
   ) _u_sha2_top_apb (
-	  .pclk               (clock)
-	  .presetn            (~reset)
-	  .paddr              (device2_mem_address)
-	  .psel               ()
-	  .penable            (device2_mem_write_request || device2_mem_read_request)
-	  .pwrite             (device2_mem_write_request && )
-	  .pwdata             (device2_mem_write_data)
-	  .pready             ()
-	  .prdata             (device2_mem_read_data)
-	  .pslverr            ()
-	  .irq                ()
-	  .aux_key_i          ()
-    .random_for_rf_i    ()
-    .random_for_data_i  ()
-    .dma_wr_req_o       ()
+	  .pclk               (clock),
+	  .presetn            (~reset),
+	  .paddr              (device2_mem_address),
+	  .psel               (),
+	  .penable            (device2_mem_write_request || device2_mem_read_request),
+	  .pwrite             (),
+	  .pwdata             (device2_mem_write_data),
+	  .pready             (),
+	  .prdata             (device2_mem_read_data),
+	  .pslverr            (),
+	  .irq                (),
+	  .aux_key_i          (),
+    .random_for_rf_i    (),
+    .random_for_data_i  (),
+    .dma_wr_req_o       (),
     .dma_rd_req_o       ()
 );
 
