@@ -28,11 +28,11 @@ SOFTWARE.
 
 Project Name:  RISC-V Steel SoC
 Project Repo:  github.com/riscv-steel/riscv-steel
-Author:        Rafael Calcada 
+Author:        Rafael Calcada
 E-mail:        rafaelcalcada@gmail.com
 
 Top Module:    rvsteel_soc
- 
+
 **************************************************************************************************/
 
 module rvsteel_soc #(
@@ -44,7 +44,7 @@ module rvsteel_soc #(
   parameter UART_BAUD_RATE = 9600,
 
   // Memory size in bytes - must be a multiple of 32
-  parameter MEMORY_SIZE = 8192,  
+  parameter MEMORY_SIZE = 8192,
 
   // Text file with program and data (one hex value per line)
   parameter MEMORY_INIT_FILE = "",
@@ -60,7 +60,7 @@ module rvsteel_soc #(
   output  wire  uart_tx
 
   );
-  
+
   wire          irq_external;
   wire          irq_external_ack;
 
@@ -74,7 +74,7 @@ module rvsteel_soc #(
   wire  [3:0 ]  mem_write_strobe;
   wire          mem_write_request;
   wire          mem_write_request_ack;
-  
+
   // RAM Memory (Device #0) <=> System Bus
 
   wire  [31:0]  device0_mem_address;
@@ -85,7 +85,7 @@ module rvsteel_soc #(
   wire  [3:0 ]  device0_mem_write_strobe;
   wire          device0_mem_write_request;
   wire          device0_mem_write_request_ack;
-  
+
   // UART (Device #1) <=> System Bus
 
   wire  [31:0]  device1_mem_address;
@@ -159,7 +159,7 @@ module rvsteel_soc #(
     .real_time_clock                (0)  // unused
 
   );
-  
+
   system_bus #(
 
     .DEVICE0_START_ADDRESS          (32'h00000000                       ),
@@ -177,7 +177,7 @@ module rvsteel_soc #(
     */
 
   ) system_bus_instance (
-  
+
     .clock                          (clock                              ),
     .reset                          (reset                              ),
 
@@ -191,7 +191,7 @@ module rvsteel_soc #(
     .mem_write_strobe               (mem_write_strobe                   ),
     .mem_write_request              (mem_write_request                  ),
     .mem_write_request_ack          (mem_write_request_ack              ),
-    
+
     // RAM Memory (Device #0) <=> System Bus
 
     .device0_mem_address            (device0_mem_address                ),
@@ -202,7 +202,7 @@ module rvsteel_soc #(
     .device0_mem_write_strobe       (device0_mem_write_strobe           ),
     .device0_mem_write_request      (device0_mem_write_request          ),
     .device0_mem_write_request_ack  (device0_mem_write_request_ack      ),
-    
+
     // UART (Device #1) <=> System Bus
 
     .device1_mem_address            (device1_mem_address                ),
@@ -241,21 +241,21 @@ module rvsteel_soc #(
     */
 
   );
-  
+
   ram_memory #(
-  
+
     .MEMORY_SIZE                    (MEMORY_SIZE                        ),
     .MEMORY_INIT_FILE               (MEMORY_INIT_FILE                   )
-  
+
   ) ram_instance (
-  
+
     // Global clock and active-high reset
-  
+
     .clock                          (clock                              ),
     .reset                          (reset                              ),
-    
+
     // Memory Interface
-  
+
     .mem_address                    (device0_mem_address                ),
     .mem_read_data                  (device0_mem_read_data              ),
     .mem_read_request               (device0_mem_read_request           ),
@@ -300,6 +300,37 @@ module rvsteel_soc #(
     .uart_irq_ack                   (irq_external_ack                   )
 
   );
+
+
+localparam SHA2_ARCH = 100;
+
+
+  sha2_top_apb#(
+    .ARCHITECTURE    (SHA2_ARCH)
+  ) _u_sha2_top_apb (
+	  .pclk               (clock)
+	  .presetn            (~reset)
+	  .paddr              (device2_mem_address)
+	  .psel               ()
+	  .penable            (device2_mem_write_request || device2_mem_read_request)
+	  .pwrite             (device2_mem_write_request && )
+	  .pwdata             (device2_mem_write_data)
+	  .pready             ()
+	  .prdata             (device2_mem_read_data)
+	  .pslverr            ()
+	  .irq                ()
+	  .aux_key_i          ()
+    .random_for_rf_i    ()
+    .random_for_data_i  ()
+    .dma_wr_req_o       ()
+    .dma_rd_req_o       ()
+);
+
+
+// device2_mem_read_request
+// device2_mem_read_request_ack
+
+// device2_mem_write_request_ack
 
   /* Uncomment to add new devices
 
