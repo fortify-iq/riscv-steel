@@ -1,0 +1,3 @@
+[submodule "design"]
+	path = design
+	url = git@github.com:fortify-iq/design.git
