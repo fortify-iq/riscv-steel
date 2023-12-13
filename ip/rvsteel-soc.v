@@ -165,7 +165,7 @@ module rvsteel_soc #(
     .DEVICE0_START_ADDRESS          (32'h00000000                       ),
     .DEVICE0_FINAL_ADDRESS          (MEMORY_SIZE-1                      ),
     .DEVICE1_START_ADDRESS          (32'h80000000                       ),
-    .DEVICE1_FINAL_ADDRESS          (32'h80000004                       )
+    .DEVICE1_FINAL_ADDRESS          (32'h80000004                       ),
 
 
     .DEVICE2_START_ADDRESS          (32'hC0000000                       ),
