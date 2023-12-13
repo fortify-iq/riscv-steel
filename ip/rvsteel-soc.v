@@ -169,8 +169,8 @@ module rvsteel_soc #(
     .DEVICE1_FINAL_ADDRESS          (32'h80000004                       ),
 
 
-    .DEVICE2_START_ADDRESS          (32'hC0000000                       ),
-    .DEVICE2_FINAL_ADDRESS          (32'hC0000004                       )//,
+    .DEVICE2_START_ADDRESS          (32'h40000000
+    .DEVICE2_FINAL_ADDRESS          (32'h40000004                       )//,
     // .DEVICE3_START_ADDRESS          (32'hdeadbeef                       ),
     // .DEVICE3_FINAL_ADDRESS          (32'hdeadbeef                       )
 
@@ -339,6 +339,8 @@ reg read_ack;
 reg write_ack;
 
 
+reg [31:0] test_reg;
+
 always@(posedge clock) begin
   if(reset) begin
     read_ack <= 1'b0;
@@ -348,6 +350,18 @@ always@(posedge clock) begin
     write_ack <= device2_mem_write_request;
   end
 end
+
+// always@(posedge clock) begin
+//   if(reset) begin
+//     test_reg <= 32'b0;
+//   end else begin
+//     if((32'hC0000000 == )) begin
+
+//     end
+//     read_ack <= device2_mem_read_request;
+//     write_ack <= device2_mem_write_request;
+//   end
+// end
 
 
 assign device2_mem_read_request_ack = read_ack;
