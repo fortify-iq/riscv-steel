@@ -169,8 +169,8 @@ module rvsteel_soc #(
     .DEVICE1_FINAL_ADDRESS          (32'h80000004                       ),
 
 
-    .DEVICE2_START_ADDRESS          (32'h40000000),
-    .DEVICE2_FINAL_ADDRESS          (32'h40000004                       )//,
+    .DEVICE2_START_ADDRESS          (32'hC0000000),
+    .DEVICE2_FINAL_ADDRESS          (32'hC0000004                       )//,
     // .DEVICE3_START_ADDRESS          (32'hdeadbeef                       ),
     // .DEVICE3_FINAL_ADDRESS          (32'hdeadbeef                       )
 
@@ -351,22 +351,45 @@ always@(posedge clock) begin
   end
 end
 
-// always@(posedge clock) begin
-//   if(reset) begin
-//     test_reg <= 32'b0;
-//   end else begin
-//     if((32'hC0000000 == )) begin
+integer i;
 
-//     end
-//     read_ack <= device2_mem_read_request;
-//     write_ack <= device2_mem_write_request;
-//   end
-// end
+always@(posedge clock) begin
+  if(reset) begin
+    test_reg <= 32'b0;
+  end else begin
+    if((device2_mem_address == 32'hC0000004 ) && device2_mem_write_request) begin
+      for(i = 0; i < 4; i = i + 1) begin
+        if(device2_mem_write_strobe[i]) begin
+          test_reg[8 * i +: 8] <= device2_mem_write_data[8 * i +: 8];
+        end
+      end
+    end
+  end
+end
 
 
 assign device2_mem_read_request_ack = read_ack;
 assign device2_mem_write_request_ack = write_ack;
-assign device2_mem_read_data = 32'hBADC0FFE;
+
+reg [31:0] device2_mem_read_data_reg;
+
+always@(posedge clock) begin
+  if(reset) begin
+    device2_mem_read_data_reg <= 32'b0;
+  end else begin
+    if(device2_mem_read_request) begin
+      if(device2_mem_address == 32'hC0000000) begin
+        device2_mem_read_data_reg <= 32'hBADC0FFE;
+      end else if(device2_mem_address == 32'hC0000004) begin
+        device2_mem_read_data_reg <= test_reg;
+      end
+    end else begin
+      device2_mem_read_data_reg <= 32'b0;
+    end
+  end
+end
+
+assign device2_mem_read_data = device2_mem_read_data_reg;
 
 // device2_mem_read_request
 // device2_mem_read_request_ack
