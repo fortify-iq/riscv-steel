@@ -169,7 +169,7 @@ module rvsteel_soc #(
     .DEVICE1_FINAL_ADDRESS          (32'h80000004                       ),
 
 
-    .DEVICE2_START_ADDRESS          (32'h40000000
+    .DEVICE2_START_ADDRESS          (32'h40000000),
     .DEVICE2_FINAL_ADDRESS          (32'h40000004                       )//,
     // .DEVICE3_START_ADDRESS          (32'hdeadbeef                       ),
     // .DEVICE3_FINAL_ADDRESS          (32'hdeadbeef                       )
