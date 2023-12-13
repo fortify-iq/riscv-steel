@@ -167,14 +167,13 @@ module rvsteel_soc #(
     .DEVICE1_START_ADDRESS          (32'h80000000                       ),
     .DEVICE1_FINAL_ADDRESS          (32'h80000004                       )
 
-    /* Uncomment to add new devices
 
-    .DEVICE2_START_ADDRESS          (32'hdeadbeef                       ),
-    .DEVICE2_FINAL_ADDRESS          (32'hdeadbeef                       ),
-    .DEVICE3_START_ADDRESS          (32'hdeadbeef                       ),
-    .DEVICE3_FINAL_ADDRESS          (32'hdeadbeef                       )
+    .DEVICE2_START_ADDRESS          (32'hC0000000                       ),
+    .DEVICE2_FINAL_ADDRESS          (32'hC0000004                       )//,
+    // .DEVICE3_START_ADDRESS          (32'hdeadbeef                       ),
+    // .DEVICE3_FINAL_ADDRESS          (32'hdeadbeef                       )
 
-    */
+
 
   ) system_bus_instance (
 
@@ -212,9 +211,9 @@ module rvsteel_soc #(
     .device1_mem_write_data         (device1_mem_write_data             ),
     .device1_mem_write_strobe       (device1_mem_write_strobe           ),
     .device1_mem_write_request      (device1_mem_write_request          ),
-    .device1_mem_write_request_ack  (device1_mem_write_request_ack      )
+    .device1_mem_write_request_ack  (device1_mem_write_request_ack      ),
 
-    /* Uncomment to add new devices
+
 
     // Device #2 <=> System Bus
 
@@ -226,6 +225,8 @@ module rvsteel_soc #(
     .device2_mem_write_strobe       (device2_mem_write_strobe           ),
     .device2_mem_write_request      (device2_mem_write_request          ),
     .device2_mem_write_request_ack  (device2_mem_write_request_ack      )
+
+ /* Uncomment to add new devices
 
     // Device #3 <=> System Bus
 
@@ -302,30 +303,55 @@ module rvsteel_soc #(
   );
 
 
-localparam SHA2_ARCH = 100;
+// localparam SHA2_ARCH = 100;
+
+// wire pready;
 
 
-  sha2_top_apb#(
-    .ARCHITECTURE    (SHA2_ARCH)
-  ) _u_sha2_top_apb (
-	  .pclk               (clock),
-	  .presetn            (~reset),
-	  .paddr              (device2_mem_address),
-	  .psel               (),
-	  .penable            (device2_mem_write_request || device2_mem_read_request),
-	  .pwrite             (),
-	  .pwdata             (device2_mem_write_data),
-	  .pready             (),
-	  .prdata             (device2_mem_read_data),
-	  .pslverr            (),
-	  .irq                (),
-	  .aux_key_i          (),
-    .random_for_rf_i    (),
-    .random_for_data_i  (),
-    .dma_wr_req_o       (),
-    .dma_rd_req_o       ()
-);
+//   sha2_top_apb#(
+//     .ARCHITECTURE    (SHA2_ARCH)
+//   ) _u_sha2_top_apb (
+// 	  .pclk               (clock),
+// 	  .presetn            (~reset),
+// 	  .paddr              (device2_mem_address),
+// 	  .psel               (device2_mem_write_request || device2_mem_read_request),
+// 	  .penable            (device2_mem_write_request || device2_mem_read_request),
+// 	  .pwrite             (device2_mem_write_request),
+// 	  .pwdata             (device2_mem_write_data),
+// 	  .pready             (pready),
+// 	  .prdata             (device2_mem_read_data),
+// 	  .pslverr            (),
+// 	  .irq                (),
+// 	  .aux_key_i          (),
+//     .random_for_rf_i    (),
+//     .random_for_data_i  (),
+//     .dma_wr_req_o       (),
+//     .dma_rd_req_o       ()
+// );
 
+
+// assign device2_mem_read_request_ack = pready;
+// assign device2_mem_write_request_ack = pready;
+
+
+reg read_ack;
+reg write_ack;
+
+
+always@(posedge clock) begin
+  if(reset) begin
+    read_ack <= 1'b0;
+    write_ack <= 1'b0;
+  end else begin
+    read_ack <= device2_mem_read_request;
+    write_ack <= device2_mem_write_request;
+  end
+end
+
+
+assign device2_mem_read_request_ack = read_ack;
+assign device2_mem_write_request_ack = write_ack;
+assign device2_mem_read_data = 32'hBADC0FFE;
 
 // device2_mem_read_request
 // device2_mem_read_request_ack
