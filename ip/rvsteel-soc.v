@@ -97,7 +97,6 @@ module rvsteel_soc #(
   wire          device1_mem_write_request;
   wire          device1_mem_write_request_ack;
 
-  /* Uncomment to add new devices
 
   // Device #2 <=> System Bus
 
@@ -109,6 +108,8 @@ module rvsteel_soc #(
   wire  [3:0 ]  device2_mem_write_strobe;
   wire          device2_mem_write_request;
   wire          device2_mem_write_request_ack;
+
+/* Uncomment to add new devices
 
   // Device #3 <=> System Bus
 
