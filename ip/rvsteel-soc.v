@@ -304,92 +304,162 @@ module rvsteel_soc #(
   );
 
 
-// localparam SHA2_ARCH = 100;
+localparam SHA2_ARCH = 100;
 
-// wire pready;
+wire pready;
+
+wire psel;
+reg psel_reg;
+reg penable_reg;
+wire pwrite;
+reg pwrite_reg;
+wire penable;
+
+always@(posedge clock) begin
+  if(reset) begin
+    psel_reg <= 1'b0;
+    penable_reg <= 1'b0;
+    pwrite_reg <= 1'b0;
+  end else begin
+    if(psel_reg) begin
+      if(pready) begin
+        psel_reg <= 1'b0;
+        penable_reg <= 1'b0;
+      end
+    end else begin
+      if(device2_mem_write_request || device2_mem_read_request) begin
+        psel_reg <= 1'b1;
+        penable_reg <= 1'b1;
+        pwrite_reg <= device2_mem_write_request && ~device2_mem_read_request;
+      end
+    end
+  end
+end
+
+assign psel = psel_reg ? psel_reg : device2_mem_write_request || device2_mem_read_request;
+assign penable = penable_reg;
+assign pwrite = (device2_mem_write_request || device2_mem_read_request) ? device2_mem_write_request && ~device2_mem_read_request : pwrite_reg;
+assign device2_mem_read_request_ack = ~pwrite_reg ? pready : 1'b0;
+assign device2_mem_write_request_ack = pwrite_reg ? pready : 1'b0;
+
+/*
+
+*/
+  sha2_top_apb#(
+    .ARCHITECTURE    (SHA2_ARCH)
+  ) _u_sha2_top_apb (
+	  .pclk               (clock),
+	  .presetn            (~reset),
+	  .paddr              (device2_mem_address[11:0]),
+	  .psel               (psel),
+	  .penable            (penable),
+	  .pwrite             (pwrite),
+	  .pwdata             (device2_mem_write_data),
+	  .pready             (pready),
+	  .prdata             (device2_mem_read_data),
+	  .pslverr            (),
+	  .irq                (),
+	  .aux_key_i          (),
+    .random_for_rf_i    (),
+    .random_for_data_i  (),
+    .dma_wr_req_o       (),
+    .dma_rd_req_o       ()
+    // ,
+    // .test_write_cmd     (device2_mem_write_request)
+    // .test_write_data    (device2_mem_write_data)
+    // .test_read_cmd      (device2_mem_read_request)
+    // .test_read_data     (device2_mem_read_data)
+    // .test_addr          (device2_mem_address)
+);
+
+// reg read_ack;
+// reg write_ack;
+
+// always@(posedge clock) begin
+//   if(reset) begin
+//     read_ack <= 1'b0;
+//     write_ack <= 1'b0;
+//   end else begin
+//     read_ack <= device2_mem_read_request;
+//     write_ack <= device2_mem_write_request;
+//   end
+// end
+
+// assign device2_mem_read_request_ack = read_ack;
+// assign device2_mem_write_request_ack = write_ack;
 
 
-//   sha2_top_apb#(
-//     .ARCHITECTURE    (SHA2_ARCH)
-//   ) _u_sha2_top_apb (
-// 	  .pclk               (clock),
-// 	  .presetn            (~reset),
-// 	  .paddr              (device2_mem_address),
-// 	  .psel               (device2_mem_write_request || device2_mem_read_request),
-// 	  .penable            (device2_mem_write_request || device2_mem_read_request),
-// 	  .pwrite             (device2_mem_write_request),
-// 	  .pwdata             (device2_mem_write_data),
-// 	  .pready             (pready),
-// 	  .prdata             (device2_mem_read_data),
-// 	  .pslverr            (),
-// 	  .irq                (),
-// 	  .aux_key_i          (),
-//     .random_for_rf_i    (),
-//     .random_for_data_i  (),
-//     .dma_wr_req_o       (),
-//     .dma_rd_req_o       ()
-// );
-
+//--------------------- END OF WEIRD INSTANCE -------------------
 
 // assign device2_mem_read_request_ack = pready;
 // assign device2_mem_write_request_ack = pready;
 
-
-reg read_ack;
-reg write_ack;
-
-
-reg [31:0] test_reg;
-
-always@(posedge clock) begin
-  if(reset) begin
-    read_ack <= 1'b0;
-    write_ack <= 1'b0;
-  end else begin
-    read_ack <= device2_mem_read_request;
-    write_ack <= device2_mem_write_request;
-  end
-end
-
-integer i;
-
-always@(posedge clock) begin
-  if(reset) begin
-    test_reg <= 32'b0;
-  end else begin
-    if((device2_mem_address == 32'hC0000004 ) && device2_mem_write_request) begin
-      for(i = 0; i < 4; i = i + 1) begin
-        if(device2_mem_write_strobe[i]) begin
-          test_reg[8 * i +: 8] <= device2_mem_write_data[8 * i +: 8];
-        end
-      end
-    end
-  end
-end
+// 1 стадия
+// выставляем psel в 1
+// penable 0
+// 2 стадия
+// psel в 1
+// penable в 1
+// 3 стадия
+// ждем pready в 1
 
 
-assign device2_mem_read_request_ack = read_ack;
-assign device2_mem_write_request_ack = write_ack;
 
-reg [31:0] device2_mem_read_data_reg;
+// reg read_ack;
+// reg write_ack;
 
-always@(posedge clock) begin
-  if(reset) begin
-    device2_mem_read_data_reg <= 32'b0;
-  end else begin
-    if(device2_mem_read_request) begin
-      if(device2_mem_address == 32'hC0000000) begin
-        device2_mem_read_data_reg <= 32'hBADC0FFE;
-      end else if(device2_mem_address == 32'hC0000004) begin
-        device2_mem_read_data_reg <= test_reg;
-      end
-    end else begin
-      device2_mem_read_data_reg <= 32'b0;
-    end
-  end
-end
 
-assign device2_mem_read_data = device2_mem_read_data_reg;
+// reg [31:0] test_reg;
+
+// always@(posedge clock) begin
+//   if(reset) begin
+//     read_ack <= 1'b0;
+//     write_ack <= 1'b0;
+//   end else begin
+//     read_ack <= device2_mem_read_request;
+//     write_ack <= device2_mem_write_request;
+//   end
+// end
+
+// integer i;
+
+// always@(posedge clock) begin
+//   if(reset) begin
+//     test_reg <= 32'b0;
+//   end else begin
+//     if((device2_mem_address == 32'hC0000004 ) && device2_mem_write_request) begin
+//       for(i = 0; i < 4; i = i + 1) begin
+//         if(device2_mem_write_strobe[i]) begin
+//           test_reg[8 * i +: 8] <= device2_mem_write_data[8 * i +: 8];
+//         end
+//       end
+//     end
+//   end
+// end
+
+
+// assign device2_mem_read_request_ack = read_ack;
+// assign device2_mem_write_request_ack = write_ack;
+
+// reg [31:0] device2_mem_read_data_reg;
+
+// always@(posedge clock) begin
+//   if(reset) begin
+//     device2_mem_read_data_reg <= 32'b0;
+//   end else begin
+//     if(device2_mem_read_request) begin
+//       if(device2_mem_address == 32'hC0000000) begin
+//         device2_mem_read_data_reg <= 32'hBADC0FFE;
+//       end else if(device2_mem_address == 32'hC0000004) begin
+//         device2_mem_read_data_reg <= test_reg;
+//       end
+//     end else begin
+//       device2_mem_read_data_reg <= 32'b0;
+//     end
+//   end
+// end
+
+// assign device2_mem_read_data = device2_mem_read_data_reg;
 
 // device2_mem_read_request
 // device2_mem_read_request_ack
