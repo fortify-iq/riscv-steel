@@ -223,37 +223,37 @@ module system_bus #(
   always @* begin
     case (selected_response)
       default: begin
-        mem_write_request_ack  <= 1'b1;
-        mem_read_data          <= 32'h00000000;
-        mem_read_request_ack   <= 2'b1;
+        mem_write_request_ack  = 1'b1;
+        mem_read_data          = 32'h00000000;
+        mem_read_request_ack   = 2'b1;
       end
       RESET: begin
-        mem_write_request_ack  <= 1'b1;
-        mem_read_data          <= 32'h00000000;
-        mem_read_request_ack   <= 2'b1;
+        mem_write_request_ack  = 1'b1;
+        mem_read_data          = 32'h00000000;
+        mem_read_request_ack   = 2'b1;
       end
       DEVICE0: begin
-        mem_write_request_ack  <= device0_mem_write_request_ack;
-        mem_read_data          <= device0_mem_read_data;
-        mem_read_request_ack   <= device0_mem_read_request_ack;
+        mem_write_request_ack  = device0_mem_write_request_ack;
+        mem_read_data          = device0_mem_read_data;
+        mem_read_request_ack   = device0_mem_read_request_ack;
       end
       DEVICE1: begin
-        mem_write_request_ack  <= device1_mem_write_request_ack;
-        mem_read_data          <= device1_mem_read_data;
-        mem_read_request_ack   <= device1_mem_read_request_ack;
+        mem_write_request_ack  = device1_mem_write_request_ack;
+        mem_read_data          = device1_mem_read_data;
+        mem_read_request_ack   = device1_mem_read_request_ack;
       end
       DEVICE2: begin
-        mem_write_request_ack  <= device2_mem_write_request_ack;
-        mem_read_data          <= device2_mem_read_data;
-        mem_read_request_ack   <= device2_mem_read_request_ack;
+        mem_write_request_ack  = device2_mem_write_request_ack;
+        mem_read_data          = device2_mem_read_data;
+        mem_read_request_ack   = device2_mem_read_request_ack;
       end
 
       /* Uncomment to add new devices
 
       DEVICE3: begin
-        mem_write_request_ack  <= device3_mem_write_request_ack;
-        mem_read_data          <= device3_mem_read_data;
-        mem_read_request_ack   <= device3_mem_read_request_ack;
+        mem_write_request_ack  = device3_mem_write_request_ack;
+        mem_read_data          = device3_mem_read_data;
+        mem_read_request_ack   = device3_mem_read_request_ack;
       end
 
       */
