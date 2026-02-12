@@ -117,6 +117,9 @@ module rvsteel_soc #(
   wire         irq_timer;
   wire         irq_software;
 
+  wire  [31:0] picorv32_irq;
+  wire  [31:0] picorv32_eoi;
+  reg   [31:0] picorv32_eoi_ff;
   wire  [15:0] irq_fast_response;
   wire         irq_external_response;
   wire         irq_timer_response;
@@ -133,14 +136,15 @@ module rvsteel_soc #(
   wire irq_forticrypt_response;
 
   // Interrupt signals map
-  assign irq_fast               = {13'b0, irq_forticrypt, irq_fortimac, irq_uart}; // Give UART interrupts the highest priority
-  assign irq_uart_response      = irq_fast_response[0];
-  assign irq_fortimac_response  = irq_fast_response[1];
-  assign irq_forticrypt_response  = irq_fast_response[2];
+  assign irq_fast                = {13'b0, irq_forticrypt, irq_fortimac, irq_uart}; // Give UART interrupts the highest priority
+  assign irq_uart_response       = irq_fast_response[0];
+  assign irq_fortimac_response   = irq_fast_response[1];
+  assign irq_forticrypt_response = irq_fast_response[2];
 
-  assign irq_external           = 1'b0; // unused
-  assign irq_software           = 1'b0; // unused
+  assign irq_external = 1'b0; // unused
+  assign irq_software = 1'b0; // unused
 
+`ifdef RVSTEEL
 
   rvsteel_core #(
 
@@ -185,6 +189,90 @@ module rvsteel_soc #(
 
   );
 
+`elsif PICORV32
+  
+  assign picorv32_irq = '0 | irq_fast;
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      picorv32_eoi_ff <= '0;
+    end else begin
+      picorv32_eoi_ff <= picorv32_eoi;
+    end
+  end
+
+  assign irq_fast_response = picorv32_irq & (picorv32_eoi_ff & ~picorv32_eoi);
+
+  logic mem_instr;
+  logic mem_valid, mem_ready;
+
+  assign manager_read_request  = mem_valid && !(|manager_write_strobe);
+  assign manager_write_request = mem_valid && |manager_write_strobe;
+  assign mem_ready             = manager_read_response | manager_write_response;
+
+  picorv32 #(
+    .ENABLE_COUNTERS     (                   1), // parameter [ 0:0] ENABLE_COUNTERS      = 1,
+    .ENABLE_COUNTERS64   (                   1), // parameter [ 0:0] ENABLE_COUNTERS64    = 1,
+    .ENABLE_REGS_16_31   (                   1), // parameter [ 0:0] ENABLE_REGS_16_31    = 1,
+    .ENABLE_REGS_DUALPORT(                   1), // parameter [ 0:0] ENABLE_REGS_DUALPORT = 1,
+    .LATCHED_MEM_RDATA   (                   0), // parameter [ 0:0] LATCHED_MEM_RDATA    = 0,
+    .TWO_STAGE_SHIFT     (                   1), // parameter [ 0:0] TWO_STAGE_SHIFT      = 1,
+    .BARREL_SHIFTER      (                   0), // parameter [ 0:0] BARREL_SHIFTER       = 0,
+    .TWO_CYCLE_COMPARE   (                   0), // parameter [ 0:0] TWO_CYCLE_COMPARE    = 0,
+    .TWO_CYCLE_ALU       (                   0), // parameter [ 0:0] TWO_CYCLE_ALU        = 0,
+    .COMPRESSED_ISA      (                   0), // parameter [ 0:0] COMPRESSED_ISA       = 0,
+    .CATCH_MISALIGN      (                   1), // parameter [ 0:0] CATCH_MISALIGN       = 1,
+    .CATCH_ILLINSN       (                   1), // parameter [ 0:0] CATCH_ILLINSN        = 1,
+    .ENABLE_PCPI         (                   0), // parameter [ 0:0] ENABLE_PCPI          = 0,
+    .ENABLE_MUL          (                   0), // parameter [ 0:0] ENABLE_MUL           = 0,
+`ifdef RTL
+    .ENABLE_FAST_MUL     (                   1), // parameter [ 0:0] ENABLE_FAST_MUL      = 0,
+    .ENABLE_DIV          (                   1), // parameter [ 0:0] ENABLE_DIV           = 0,
+`else
+    .ENABLE_FAST_MUL     (                   0), // parameter [ 0:0] ENABLE_FAST_MUL      = 0,
+    .ENABLE_DIV          (                   0), // parameter [ 0:0] ENABLE_DIV           = 0,
+`endif
+    .ENABLE_IRQ          (                   0), // parameter [ 0:0] ENABLE_IRQ           = 0,
+    .ENABLE_IRQ_QREGS    (                   1), // parameter [ 0:0] ENABLE_IRQ_QREGS     = 1,
+    .ENABLE_IRQ_TIMER    (                   1), // parameter [ 0:0] ENABLE_IRQ_TIMER     = 1,
+    .ENABLE_TRACE        (                   0), // parameter [ 0:0] ENABLE_TRACE         = 0,
+    .REGS_INIT_ZERO      (                   0), // parameter [ 0:0] REGS_INIT_ZERO       = 0,
+    .MASKED_IRQ          (      32'h 0000_0000), // parameter [31:0] MASKED_IRQ           = 32'h 0000_0000,
+    .LATCHED_IRQ         (      32'h ffff_ffff), // parameter [31:0] LATCHED_IRQ          = 32'h ffff_ffff,
+    .PROGADDR_RESET      (      32'h 0000_0000), // parameter [31:0] PROGADDR_RESET       = 32'h 0000_0000,
+    .PROGADDR_IRQ        (      32'h 0000_0010), // parameter [31:0] PROGADDR_IRQ         = 32'h 0000_0010,
+    .STACKADDR           (      32'h ffff_ffff)  // parameter [31:0] STACKADDR            = 32'h ffff_ffff
+  ) dut (
+    .clk                 (clock               ),
+    .resetn              (~reset              ),
+    .trap                (),
+    .mem_valid           (mem_valid           ),
+    .mem_instr           (mem_instr           ),
+    .mem_ready           (mem_ready           ),
+    .mem_addr            (manager_rw_address  ),
+    .mem_wdata           (manager_write_data  ),
+    .mem_wstrb           (manager_write_strobe),
+    .mem_rdata           (manager_read_data   ),
+    .mem_la_read         (),
+    .mem_la_write        (),
+    .mem_la_addr         (),
+    .mem_la_wdata        (),
+    .mem_la_wstrb        (),
+    .pcpi_valid          (),
+    .pcpi_insn           (),
+    .pcpi_rs1            (),
+    .pcpi_rs2            (),
+    .pcpi_wr             (),
+    .pcpi_rd             (),
+    .pcpi_wait           (),
+    .pcpi_ready          (),
+    .irq                 (picorv32_irq        ),
+    .eoi                 (picorv32_eoi        ),
+    .trace_valid         (),
+    .trace_data          ()
+  );
+`endif
+
   rvsteel_bus #(
 
     .NUM_DEVICES(NUM_DEVICES)
@@ -220,8 +308,8 @@ module rvsteel_soc #(
 
     // Base addresses and masks of the managed devices
 
-    .device_start_address          (device_start_address                ),
-    .device_region_size            (device_region_size                  )
+    .device_start_address           (device_start_address               ),
+    .device_region_size             (device_region_size                 )
 
   );
 
