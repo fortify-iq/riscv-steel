@@ -12,11 +12,11 @@ module rvsteel_soc #(
   // Desired baud rate for UART unit
   parameter UART_BAUD_RATE = 9600       ,
   // Memory size in bytes - must be a power of 2
-  parameter MEMORY_SIZE = 8192          ,
+  parameter MEMORY_SIZE = 524288        ,
   // Text file with program and data (one hex value per line)
   parameter MEMORY_INIT_FILE = ""       ,
   // Address of the first instruction to fetch from memory
-  parameter BOOT_ADDRESS = 32'h00000000 ,
+  parameter BOOT_ADDRESS = 32'h00040000 ,
   // Number of available I/O ports
   parameter GPIO_WIDTH = 2              ,
   // Number of CS (Chip Select) pins for the SPI controller
